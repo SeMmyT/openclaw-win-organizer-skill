@@ -1,0 +1,19 @@
+#!/bin/bash
+# klow-list - Safe directory listing
+source /home/klowalski/bin/klow-common.sh
+klow_init "klow-list" "$@"
+
+path="${1:-.}"
+
+# Validate path
+if ! validate_path "$path" "read"; then
+    exit 1
+fi
+
+# List with useful info
+ls -lah --color=auto "$path" 2>/dev/null || {
+    klow_log_error "Failed to list directory: $path"
+    exit 1
+}
+
+klow_log_action "list" "path=$path"

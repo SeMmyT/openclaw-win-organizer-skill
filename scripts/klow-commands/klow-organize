@@ -1,0 +1,69 @@
+#!/bin/bash
+# klow-organize - Move file to workspace
+source /home/klowalski/bin/klow-common.sh
+klow_init "klow-organize" "$@"
+
+require_args 2 $# "klow-organize <source> <dest_folder>"
+
+source="$1"
+dest_folder="$2"
+
+# Validate source path
+if ! validate_path "$source" "read"; then
+    exit 1
+fi
+
+# Check source exists
+if [[ ! -e "$source" ]]; then
+    klow_log_error "Source not found: $source"
+    exit 1
+fi
+
+# Destination must be within workspace
+# Allow relative paths within workspace
+if [[ "$dest_folder" != /* ]]; then
+    dest_folder="$KLOW_WORKSPACE/$dest_folder"
+fi
+
+# Validate destination is within workspace
+dest_resolved=$(realpath -m "$dest_folder")
+if [[ "$dest_resolved" != "$KLOW_WORKSPACE"* ]]; then
+    klow_log_denied "Destination must be within KlowalskiWorkspace: $dest_folder"
+    exit 1
+fi
+
+# Create destination directory if needed
+mkdir -p "$dest_folder" || {
+    klow_log_error "Failed to create destination: $dest_folder"
+    exit 1
+}
+
+# Get source filename
+filename=$(basename "$source")
+dest_file="$dest_folder/$filename"
+
+# Check if destination exists
+if [[ -e "$dest_file" ]]; then
+    echo "WARNING: Destination exists: $dest_file"
+    echo "Adding timestamp to filename..."
+    timestamp=$(date '+%Y%m%d_%H%M%S')
+    name="${filename%.*}"
+    ext="${filename##*.}"
+    if [[ "$name" == "$ext" ]]; then
+        dest_file="$dest_folder/${name}_${timestamp}"
+    else
+        dest_file="$dest_folder/${name}_${timestamp}.${ext}"
+    fi
+fi
+
+# Move file
+mv "$source" "$dest_file" || {
+    klow_log_error "Failed to move file"
+    exit 1
+}
+
+echo "Organized: $(basename "$source")"
+echo "  From: $source"
+echo "  To:   $dest_file"
+
+klow_log_action "organize" "from=$source to=$dest_file"

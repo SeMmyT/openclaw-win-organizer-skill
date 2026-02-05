@@ -1,0 +1,64 @@
+#!/bin/bash
+# klow-workspace - Execute commands within workspace sandbox
+source /home/klowalski/bin/klow-common.sh
+klow_init "klow-workspace" "$@"
+
+if [[ $# -eq 0 ]]; then
+    echo "Usage: klow-workspace <command> [args...]"
+    echo ""
+    echo "Runs command within KlowalskiWorkspace with full permissions."
+    echo "Workspace: $KLOW_WORKSPACE"
+    echo ""
+    echo "Examples:"
+    echo "  klow-workspace ls -la"
+    echo "  klow-workspace mkdir projects"
+    echo "  klow-workspace rm old-file.txt"
+    exit 0
+fi
+
+# Ensure workspace exists
+if [[ ! -d "$KLOW_WORKSPACE" ]]; then
+    klow_log_error "Workspace not found: $KLOW_WORKSPACE"
+    exit 1
+fi
+
+# Allowed commands in workspace
+ALLOWED_COMMANDS=(
+    "ls" "cat" "head" "tail" "grep" "find" "tree"
+    "mkdir" "touch" "cp" "mv" "rm"
+    "echo" "printf"
+    "wc" "sort" "uniq" "diff"
+    "file" "stat" "du"
+    "tar" "zip" "unzip" "gzip" "gunzip"
+    "python" "python3" "node" "bash" "sh"
+)
+
+cmd="$1"
+
+# Check if command is allowed
+allowed=false
+for allowed_cmd in "${ALLOWED_COMMANDS[@]}"; do
+    if [[ "$cmd" == "$allowed_cmd" ]]; then
+        allowed=true
+        break
+    fi
+done
+
+if [[ "$allowed" != "true" ]]; then
+    klow_log_denied "Command not allowed in workspace: $cmd"
+    echo "Allowed commands: ${ALLOWED_COMMANDS[*]}"
+    exit 1
+fi
+
+# Execute in workspace directory
+cd "$KLOW_WORKSPACE" || {
+    klow_log_error "Failed to enter workspace"
+    exit 1
+}
+
+# Run the command
+"$@"
+exit_code=$?
+
+klow_log_action "workspace" "cmd='$*' exit=$exit_code"
+exit $exit_code

@@ -1,0 +1,99 @@
+#!/bin/bash
+# klow-manifest - View and manage folder descriptions
+source /home/klowalski/bin/klow-common.sh
+klow_init "klow-manifest" "$@"
+
+MANIFEST_FILE="$KLOW_CONFIG/manifest.yaml"
+
+show_help() {
+    cat << 'EOF'
+klow-manifest - Folder description manager
+
+Usage:
+  klow-manifest              Show all folder descriptions
+  klow-manifest <path>       Show description for specific folder
+  klow-manifest set <path>   Set description (interactive)
+
+The manifest helps Klowalski understand what each folder contains
+without scanning everything every time.
+EOF
+}
+
+# Initialize manifest if missing
+init_manifest() {
+    if [[ ! -f "$MANIFEST_FILE" ]]; then
+        mkdir -p "$(dirname "$MANIFEST_FILE")"
+        cat > "$MANIFEST_FILE" << 'EOF'
+# Klowalski Folder Manifest
+# Describes folder purposes for efficient navigation
+
+folders:
+  /mnt/c/Users/Daniel/Downloads:
+    purpose: "Browser downloads, installers, temp files"
+    cleanup_policy: "aggressive"
+    notes: "Safe to clean old files"
+
+  /mnt/c/Users/Daniel/Documents:
+    purpose: "Important documents, work files"
+    cleanup_policy: "conservative"
+    notes: "Ask before organizing"
+
+  /mnt/c/Users/Daniel/Desktop:
+    purpose: "Active items, shortcuts, quick access"
+    cleanup_policy: "ask_first"
+    notes: "KlowalskiWorkspace and KlowalskiTrash are here"
+
+  /mnt/c/Users/Daniel/Pictures:
+    purpose: "Photos, screenshots, images"
+    cleanup_policy: "moderate"
+    notes: "Can organize by date"
+
+  /mnt/c/Users/Daniel/Videos:
+    purpose: "Video files, recordings"
+    cleanup_policy: "moderate"
+    notes: "Large files, check before organizing"
+EOF
+        echo "Created default manifest: $MANIFEST_FILE"
+    fi
+}
+
+# Show full manifest
+show_all() {
+    init_manifest
+    cat "$MANIFEST_FILE"
+}
+
+# Show specific folder
+show_folder() {
+    local path="$1"
+    init_manifest
+
+    # Simple grep-based lookup (good enough for YAML)
+    echo "Folder: $path"
+    echo "---"
+    awk -v path="$path" '
+        $0 ~ path":" { found=1; next }
+        found && /^  [a-z]/ { print; next }
+        found && /^[^ ]/ { exit }
+    ' "$MANIFEST_FILE"
+}
+
+# Main logic
+case "${1:-}" in
+    ""|"--help"|"-h")
+        if [[ -z "$1" ]]; then
+            show_all
+        else
+            show_help
+        fi
+        ;;
+    "set")
+        echo "Interactive manifest editing not yet implemented"
+        echo "Edit directly: $MANIFEST_FILE"
+        klow_log_action "manifest" "set_requested"
+        ;;
+    *)
+        show_folder "$1"
+        klow_log_action "manifest" "view path=$1"
+        ;;
+esac

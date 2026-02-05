@@ -1,0 +1,39 @@
+#!/bin/bash
+# klow-help - Display available commands and usage
+
+cat << 'EOF'
+Klowalski PC Access Commands
+============================
+
+READ OPERATIONS (safe, no modifications):
+  klow-tree [path] [depth]    Show directory tree (default depth: 3)
+  klow-list [path]            List directory contents
+  klow-read <file>            Read file contents
+  klow-status                 Show system status (disk, memory, uptime)
+  klow-manifest [folder]      Show/edit folder descriptions
+
+FILE OPERATIONS (controlled):
+  klow-mark-delete <file> [reason]   Move file to trash (not actual delete)
+  klow-organize <file> <dest>        Move file to KlowalskiWorkspace/
+
+WORKSPACE (full access in sandbox):
+  klow-workspace <command>    Run command inside KlowalskiWorkspace/
+
+SYSTEM (restricted):
+  klow-shutdown [seconds]     Shutdown PC (0-3600 sec delay, default: 60)
+  klow-shutdown-cancel        Cancel pending shutdown
+
+UTILITY:
+  klow-help                   Show this help message
+
+PATHS:
+  Workspace: /mnt/c/Users/Daniel/Desktop/KlowalskiWorkspace/
+  Trash:     /mnt/c/Users/Daniel/Desktop/KlowalskiTrash/
+  Logs:      /home/klowalski/logs/
+
+BLOCKED (cannot access):
+  - .ssh directories
+  - .env files and credentials
+  - AppData folder
+  - Windows system directories
+EOF

@@ -1,0 +1,42 @@
+# Klowalski Blocked Paths
+# Paths listed here are denied for all operations
+# Use glob patterns, one per line
+
+# SSH and security
+/mnt/c/Users/Daniel/.ssh/
+/home/*/.ssh/
+
+# Environment and credentials
+*.env
+*.env.*
+*credential*
+*secret*
+*password*
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Windows system
+/mnt/c/Windows/
+/mnt/c/Program Files/
+/mnt/c/Program Files (x86)/
+/mnt/c/ProgramData/
+
+# User data that should stay private
+/mnt/c/Users/Daniel/AppData/
+/mnt/c/Users/Daniel/NTUSER.DAT
+/mnt/c/Users/Daniel/ntuser.*
+
+# Browser data
+**/Chrome/User Data/**
+**/Firefox/Profiles/**
+**/Edge/User Data/**
+
+# Package manager caches (too large/noisy)
+**/node_modules/**
+**/.git/objects/**
+**/__pycache__/**
+**/.cache/**
+**/venv/**
+**/.venv/**

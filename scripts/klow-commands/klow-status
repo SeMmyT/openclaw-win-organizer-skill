@@ -1,0 +1,52 @@
+#!/bin/bash
+# klow-status - Display system status
+source /home/klowalski/bin/klow-common.sh
+klow_init "klow-status" "$@"
+
+echo "=== Klowalski PC Status ==="
+echo ""
+
+# Uptime
+echo "UPTIME:"
+uptime
+echo ""
+
+# Memory
+echo "MEMORY:"
+free -h
+echo ""
+
+# Disk usage (Windows drives)
+echo "DISK USAGE:"
+df -h /mnt/c /mnt/d 2>/dev/null | grep -v "^Filesystem" | while read line; do
+    echo "  $line"
+done
+echo ""
+
+# Workspace size
+if [[ -d "$KLOW_WORKSPACE" ]]; then
+    ws_size=$(du -sh "$KLOW_WORKSPACE" 2>/dev/null | cut -f1)
+    echo "WORKSPACE: $ws_size"
+else
+    echo "WORKSPACE: Not found"
+fi
+
+# Trash size
+if [[ -d "$KLOW_TRASH" ]]; then
+    trash_size=$(du -sh "$KLOW_TRASH" 2>/dev/null | cut -f1)
+    trash_count=$(find "$KLOW_TRASH" -type f 2>/dev/null | wc -l)
+    echo "TRASH: $trash_size ($trash_count files)"
+else
+    echo "TRASH: Not found"
+fi
+echo ""
+
+# Tailscale status
+echo "NETWORK:"
+if command -v tailscale &>/dev/null; then
+    tailscale status 2>/dev/null | head -5
+else
+    ip addr show | grep "inet " | grep -v "127.0.0.1" | awk '{print "  " $2}'
+fi
+
+klow_log_action "status" "viewed"

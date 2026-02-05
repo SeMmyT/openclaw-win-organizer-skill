@@ -1,0 +1,33 @@
+#!/bin/bash
+# klow-shutdown - Graceful system shutdown
+source /home/klowalski/bin/klow-common.sh
+klow_init "klow-shutdown" "$@"
+
+MAX_DELAY=3600  # 1 hour max
+DEFAULT_DELAY=60
+
+delay="${1:-$DEFAULT_DELAY}"
+
+# Validate delay
+if ! [[ "$delay" =~ ^[0-9]+$ ]]; then
+    klow_log_error "Invalid delay: $delay (must be a number)"
+    echo "Usage: klow-shutdown [seconds]  (0-3600, default: 60)"
+    exit 1
+fi
+
+if [[ "$delay" -gt "$MAX_DELAY" ]]; then
+    klow_log_error "Delay too long: $delay (max: $MAX_DELAY)"
+    exit 1
+fi
+
+# Execute Windows shutdown
+/mnt/c/Windows/System32/shutdown.exe /s /t "$delay" /c "Shutdown initiated by Klowalski" 2>/dev/null
+
+if [[ $? -eq 0 ]]; then
+    echo "Shutdown scheduled in $delay seconds"
+    echo "To cancel: klow-shutdown-cancel"
+    klow_log_action "shutdown" "delay=$delay"
+else
+    klow_log_error "Failed to schedule shutdown"
+    exit 1
+fi

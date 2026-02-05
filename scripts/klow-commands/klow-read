@@ -1,0 +1,40 @@
+#!/bin/bash
+# klow-read - Read file contents with safety checks
+source /home/klowalski/bin/klow-common.sh
+klow_init "klow-read" "$@"
+
+require_args 1 $# "klow-read <file> [lines]"
+
+file="$1"
+lines="${2:-100}"  # Default to first 100 lines
+
+# Validate path
+if ! validate_path "$file" "read"; then
+    exit 1
+fi
+
+# Check if it's a file
+if [[ ! -f "$file" ]]; then
+    klow_log_error "Not a file: $file"
+    exit 1
+fi
+
+# Check file size (warn if large)
+size=$(stat -c%s "$file" 2>/dev/null || echo 0)
+if [[ "$size" -gt 1048576 ]]; then  # > 1MB
+    echo "WARNING: Large file ($(human_size $size)), showing first $lines lines"
+fi
+
+# Check for binary
+if file "$file" | grep -q "binary"; then
+    klow_log_error "Cannot read binary file: $file"
+    exit 1
+fi
+
+# Read file
+head -n "$lines" "$file" 2>/dev/null || {
+    klow_log_error "Failed to read file: $file"
+    exit 1
+}
+
+klow_log_action "read" "file=$file lines=$lines"

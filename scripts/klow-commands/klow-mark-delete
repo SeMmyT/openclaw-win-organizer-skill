@@ -1,0 +1,85 @@
+#!/bin/bash
+# klow-mark-delete - Move file to trash (safe delete)
+source /home/klowalski/bin/klow-common.sh
+klow_init "klow-mark-delete" "$@"
+
+require_args 1 $# "klow-mark-delete <file> [reason]"
+
+file="$1"
+reason="${2:-No reason provided}"
+
+# Validate source path
+if ! validate_path "$file" "read"; then
+    exit 1
+fi
+
+# Check file exists
+if [[ ! -e "$file" ]]; then
+    klow_log_error "File not found: $file"
+    exit 1
+fi
+
+# Get absolute path
+abs_path=$(realpath "$file")
+
+# Create trash batch folder (timestamped)
+batch_id=$(date '+%Y-%m-%d_%H-%M-%S')
+batch_dir="$KLOW_TRASH/$batch_id"
+
+# Recreate original path structure in trash
+# Convert /mnt/c/Users/Daniel/Downloads/file.txt -> C/Users/Daniel/Downloads/file.txt
+relative_path="${abs_path#/mnt/}"
+dest_dir="$batch_dir/$(dirname "$relative_path")"
+dest_file="$batch_dir/$relative_path"
+
+# Create directory structure
+mkdir -p "$dest_dir" || {
+    klow_log_error "Failed to create trash directory"
+    exit 1
+}
+
+# Get file info before moving
+file_size=$(stat -c%s "$file" 2>/dev/null || echo 0)
+file_type=$(file -b "$file" 2>/dev/null || echo "unknown")
+
+# Move file to trash
+mv "$file" "$dest_file" || {
+    klow_log_error "Failed to move file to trash"
+    exit 1
+}
+
+# Create/update manifest
+manifest_file="$batch_dir/_manifest.json"
+if [[ -f "$manifest_file" ]]; then
+    # Append to existing manifest (remove closing bracket, add entry, close)
+    sed -i '$ d' "$manifest_file"  # Remove last line (])
+    echo "  }," >> "$manifest_file"
+fi
+
+# Write manifest entry
+if [[ ! -f "$manifest_file" ]]; then
+    echo '{' > "$manifest_file"
+    echo '  "batch_id": "'"$batch_id"'",' >> "$manifest_file"
+    echo '  "timestamp": "'"$(date -Iseconds)"'",' >> "$manifest_file"
+    echo '  "files": [' >> "$manifest_file"
+fi
+
+cat >> "$manifest_file" << EOF
+    {
+      "original_path": "$abs_path",
+      "reason": "$reason",
+      "size_bytes": $file_size,
+      "type": "$file_type",
+      "marked_at": "$(date -Iseconds)"
+    }
+EOF
+echo '  ]' >> "$manifest_file"
+echo '}' >> "$manifest_file"
+
+# Report success
+echo "Marked for deletion: $abs_path"
+echo "  Moved to: $dest_file"
+echo "  Reason: $reason"
+echo "  Size: $(human_size $file_size)"
+
+klow_log_action "mark-delete" "file=$abs_path reason='$reason' size=$file_size"

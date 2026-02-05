@@ -1,0 +1,35 @@
+#!/bin/bash
+# klow-tree - Display directory tree with safety checks
+source /home/klowalski/bin/klow-common.sh
+klow_init "klow-tree" "$@"
+
+# Defaults
+DEFAULT_PATH="$WINDOWS_HOME"
+DEFAULT_DEPTH=3
+MAX_DEPTH=5
+
+path="${1:-$DEFAULT_PATH}"
+depth="${2:-$DEFAULT_DEPTH}"
+
+# Validate depth
+if ! [[ "$depth" =~ ^[0-9]+$ ]] || [[ "$depth" -gt "$MAX_DEPTH" ]]; then
+    klow_log_error "Invalid depth: $depth (max: $MAX_DEPTH)"
+    exit 1
+fi
+
+# Validate path
+if ! validate_path "$path" "read"; then
+    exit 1
+fi
+
+# Run tree with exclusions
+tree -L "$depth" \
+    --noreport \
+    -I "node_modules|.git|AppData|__pycache__|.cache" \
+    --dirsfirst \
+    "$path" 2>/dev/null || {
+        klow_log_error "Failed to read directory: $path"
+        exit 1
+    }
+
+klow_log_action "tree" "path=$path depth=$depth"
