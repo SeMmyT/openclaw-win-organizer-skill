@@ -11,6 +11,37 @@ Allows an AI agent (like Claude) running on a remote server to:
 - Check system status and schedule shutdowns
 - All through a **restricted shell** with only approved commands
 
+## Real World Results
+
+First deployment organizing a cluttered Windows desktop:
+
+```mermaid
+flowchart LR
+    subgraph Before["Before"]
+        B1[1022 MB across 80+ items]
+        B2[11 shortcuts]
+        B3[20 temp files]
+        B4[Chaos]
+    end
+
+    subgraph After["After"]
+        A1[186 MB on Desktop]
+        A2[836 MB organized into folders]
+        A3[5 active shortcuts]
+        A4[Clean structure]
+    end
+
+    Before -->|AI Agent| After
+```
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Desktop Size | 1022 MB | 186 MB |
+| Files/Folders | 80+ scattered | Logically organized |
+| Shortcuts | 11 (many broken) | 5 active |
+| Temp Files | 20+ | 0 (moved to trash) |
+| Organization | Chaos | Everything has a place |
+
 ## Security Model
 
 - **Tailscale-only access**: SSH only accepts connections from your Tailscale network
